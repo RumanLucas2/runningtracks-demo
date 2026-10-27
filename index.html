@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Protótipo integrado do RunningTracks com visão mobile e painel administrativo mockados">
+    <title>RunningTracks — Protótipo integrado</title>
+    <style>
+        :root {
+            --navy-950: #06111f;
+            --navy-900: #0c1c31;
+            --navy-800: #142b49;
+            --ink: #172943;
+            --muted: #78879c;
+            --muted-light: #9aabc0;
+            --line: #e5ebf2;
+            --canvas: #f5f8fc;
+            --surface: #fff;
+            --blue: #3d6df2;
+            --blue-dark: #2d55d2;
+            --blue-soft: #eaf0ff;
+            --mint: #1ca979;
+            --mint-soft: #e7f8f1;
+            --amber: #d28a21;
+            --amber-soft: #fff4df;
+            --red: #d25563;
+            --red-soft: #ffebee;
+            --shadow: 0 20px 55px rgba(15, 38, 73, .1);
+        }
+        * { box-sizing: border-box; }
+        html { min-width: 320px; background: var(--navy-950); }
+        body { margin: 0; color: var(--ink); background: var(--canvas); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+        button, input, select, textarea { font: inherit; }
+        button { cursor: pointer; }
+        a { color: inherit; text-decoration: none; }
+
+        .global-bar { position: fixed; z-index: 100; top: 0; right: 0; left: 0; display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 0 24px; color: #dce8f8; background: rgba(7, 19, 34, .95); border-bottom: 1px solid rgba(255,255,255,.08); box-shadow: 0 8px 25px rgba(0,0,0,.12); backdrop-filter: blur(14px); }
+        .global-brand { display: flex; align-items: center; gap: 10px; }
+        .global-mark { display: grid; width: 32px; height: 32px; place-items: center; color: #fff; background: linear-gradient(135deg, #6b8cff, #385cdb); border-radius: 10px; font-size: 11px; font-weight: 900; letter-spacing: -.06em; }
+        .global-brand strong { color: #f7faff; font-size: 12px; letter-spacing: .13em; }
+        .global-brand strong span { color: #7f9cff; }
+        .global-brand small { display: block; margin-top: 2px; color: #8298b4; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+        .mode-switcher { display: flex; align-items: center; gap: 5px; padding: 4px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 11px; }
+        .mode-button { min-height: 31px; padding: 0 13px; color: #9cafc6; background: transparent; border: 0; border-radius: 8px; font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; transition: .18s ease; }
+        .mode-button:hover { color: #fff; background: rgba(255,255,255,.08); }
+        .mode-button.active { color: #fff; background: var(--blue); box-shadow: 0 5px 13px rgba(61,109,242,.28); }
+        .demo-status { display: inline-flex; align-items: center; gap: 7px; color: #e9c875; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+        .demo-status i { width: 6px; height: 6px; background: #e4a437; border-radius: 50%; box-shadow: 0 0 0 4px rgba(228,164,55,.14); }
+        #app { min-height: 100vh; padding-top: 64px; }
+
+        /* Mobile preview */
+        .mobile-workspace { display: grid; grid-template-columns: minmax(230px, 340px) minmax(390px, 480px); align-items: center; justify-content: center; gap: 58px; min-height: calc(100vh - 64px); padding: 42px 32px; color: #dce8f8; background: radial-gradient(circle at 57% 42%, #1b395c 0, #0b1a2d 37%, #06111f 80%); }
+        .device-panel { width: 100%; }
+        .device-panel h1 { margin: 0 0 8px; color: #fff; font-size: 27px; letter-spacing: -.05em; line-height: 1.05; }
+        .device-panel > p { margin: 0 0 18px; color: #8fa8c4; font-size: 12px; line-height: 1.5; }
+        .device-picker { padding: 15px; color: #a7bad0; background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1); border-radius: 15px; }
+        .device-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .device-picker-head strong { color: #e7f0fb; font-size: 11px; }
+        .device-picker-head span { color: #8fa8c4; font-size: 9px; font-weight: 800; }
+        .device-group-label { display: block; margin: 10px 0 6px; color: #7891ad; font-size: 8px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+        .device-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+        .device-option { min-width: 0; padding: 8px 9px; color: #a5b7cc; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09); border-radius: 9px; text-align: left; transition: .18s ease; }
+        .device-option:hover { color: #edf4ff; background: rgba(91,127,228,.16); border-color: rgba(129,159,247,.42); }
+        .device-option.active { color: #fff; background: rgba(74,109,224,.28); border-color: #6f8fff; box-shadow: inset 2px 0 #83a0ff; }
+        .device-option strong { display: block; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+        .device-option small { display: block; margin-top: 3px; color: #7892ae; font-size: 8px; }
+        .device-option.active small { color: #bdccff; }
+        .device-meta { margin-top: 10px; color: #8098b4; font-size: 9px; line-height: 1.4; }
+        .mobile-note { margin-top: 17px; padding: 12px; color: #9bb1c9; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: 13px; font-size: 10px; line-height: 1.5; }
+        .mobile-note strong { display: block; margin-bottom: 4px; color: #e6effa; }
+        .phone-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+        .phone-shadow { position: absolute; right: 6%; bottom: 0; left: 6%; height: 38px; background: rgba(0,0,0,.5); border-radius: 50%; filter: blur(18px); }
+        .phone { --device-frame: #050b14; --device-border: #334255; --device-radius: 47px; --screen-radius: 38px; position: relative; z-index: 1; width: 390px; height: 800px; padding: 10px; background: var(--device-frame); border: 2px solid var(--device-border); border-radius: var(--device-radius); box-shadow: 0 40px 90px rgba(0,0,0,.42), inset 0 0 0 1px #02050a; transition: width .3s ease, height .3s ease, border-radius .3s ease, background .3s ease, border-color .3s ease; }
+        .phone::before { content: ""; position: absolute; z-index: 3; top: 12px; left: 50%; width: 117px; height: 25px; background: #050b14; border-radius: 0 0 17px 17px; transform: translateX(-50%); }
+        .phone::after { content: ""; position: absolute; z-index: 4; top: 21px; left: calc(50% + 36px); width: 7px; height: 7px; background: #1c2b3c; border: 2px solid #111c2b; border-radius: 50%; }
+        .phone.iphone-normal { --device-frame: #050b14; --device-border: #334255; --device-radius: 47px; --screen-radius: 38px; }
+        .phone.iphone-pro { --device-frame: #171a1f; --device-border: #6b717c; --device-radius: 45px; --screen-radius: 36px; width: 388px; height: 802px; }
+        .phone.iphone-max { --device-frame: #211e1c; --device-border: #8d8175; --device-radius: 48px; --screen-radius: 39px; width: 405px; height: 830px; }
+        .phone.android-samsung { --device-frame: #11151c; --device-border: #596476; --device-radius: 36px; --screen-radius: 28px; width: 382px; height: 804px; }
+        .phone.android-pixel { --device-frame: #d2d6dc; --device-border: #7f8997; --device-radius: 32px; --screen-radius: 25px; width: 378px; height: 798px; }
+        .phone.android-xiaomi { --device-frame: #171717; --device-border: #55585c; --device-radius: 29px; --screen-radius: 23px; width: 390px; height: 810px; }
+        .phone.android-motorola { --device-frame: #ece8e1; --device-border: #94918c; --device-radius: 34px; --screen-radius: 27px; width: 384px; height: 792px; }
+        .phone.android-oneplus { --device-frame: #15181c; --device-border: #737a84; --device-radius: 31px; --screen-radius: 24px; width: 386px; height: 806px; }
+        .phone.android::before { top: 16px; width: 7px; height: 7px; background: #1a2533; border: 2px solid var(--device-frame); border-radius: 50%; }
+        .phone.android::after { display: none; }
+        .screen { position: relative; display: flex; height: 100%; overflow: hidden; flex-direction: column; background: var(--canvas); border-radius: var(--screen-radius); }
+        .status-bar { display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 8px 22px 0; color: var(--ink); font-size: 10px; font-weight: 900; }
+        .status-icons { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+        .mobile-screen { flex: 1; overflow: hidden; }
+        .screen-scroll { height: 100%; overflow-y: auto; padding: 9px 20px 94px; scrollbar-width: none; }
+        .screen-scroll::-webkit-scrollbar { display: none; }
+        .mobile-app-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 23px; }
+        .greeting { color: var(--muted); font-size: 11px; }
+        .greeting strong { display: block; margin-top: 3px; color: var(--ink); font-size: 20px; letter-spacing: -.05em; }
+        .profile-chip { display: grid; width: 35px; height: 35px; place-items: center; color: #cbd8ff; background: #3556b7; border: 0; border-radius: 50%; font-size: 11px; font-weight: 900; }
+        .mobile-bell { position: relative; display: grid; width: 33px; height: 33px; margin-right: 8px; place-items: center; color: #708096; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+        .mobile-bell-count { position: absolute; top: -6px; right: -6px; display: grid; min-width: 16px; height: 16px; padding: 0 4px; place-items: center; color: #fff; background: var(--red); border: 2px solid var(--canvas); border-radius: 999px; font-size: 8px; font-weight: 900; }
+        .mobile-top-right { display: flex; align-items: center; }
+        .mobile-eyebrow { margin: 0 0 8px; color: var(--blue); font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+        .mobile-section-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 11px; }
+        .mobile-section-title h2 { margin: 0; color: var(--ink); font-size: 15px; letter-spacing: -.03em; }
+        .mobile-section-title button { padding: 0; color: var(--blue); background: transparent; border: 0; font-size: 10px; font-weight: 800; }
+        .hero-card { position: relative; min-height: 185px; padding: 20px; overflow: hidden; color: #fff; background: linear-gradient(135deg, #385edc 0%, #6884fa 100%); border-radius: 20px; box-shadow: 0 14px 25px rgba(61,109,242,.25); }
+        .hero-card::after { content: "◈"; position: absolute; right: 16px; bottom: -24px; color: rgba(255,255,255,.13); font-size: 130px; font-weight: 900; }
+        .hero-kicker { position: relative; z-index: 1; margin-bottom: 8px; color: #dbe4ff; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+        .hero-card h2 { position: relative; z-index: 1; max-width: 205px; margin: 0 0 9px; color: #fff; font-size: 22px; letter-spacing: -.055em; line-height: 1.02; }
+        .hero-card p { position: relative; z-index: 1; max-width: 210px; margin: 0 0 18px; color: #e3e9ff; font-size: 10px; line-height: 1.45; }
+        .hero-button { position: relative; z-index: 1; min-height: 32px; padding: 0 11px; color: #2d52cb; background: #fff; border: 0; border-radius: 9px; font-size: 10px; font-weight: 900; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 24px; }
+        .stat { padding: 12px 9px; background: #fff; border: 1px solid var(--line); border-radius: 12px; text-align: center; }
+        .stat strong { display: block; color: var(--ink); font-size: 16px; letter-spacing: -.05em; }
+        .stat span { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; font-weight: 700; }
+        .mobile-race-list { display: grid; gap: 9px; }
+        .mobile-race-card { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px; color: inherit; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 13px rgba(20,43,78,.03); text-align: left; }
+        button.mobile-race-card:hover { border-color: #b9c9f9; }
+        button.mobile-race-card:disabled { cursor: default; opacity: .65; }
+        .race-art { display: grid; width: 50px; height: 50px; flex: 0 0 auto; place-items: center; color: #fff; background: linear-gradient(135deg, #6687ff, #385dd8); border-radius: 12px; font-size: 20px; }
+        .race-art.mint { background: linear-gradient(135deg, #44c59d, #138d68); }
+        .race-art.amber { background: linear-gradient(135deg, #f3b858, #cb791e); }
+        .race-copy { min-width: 0; flex: 1; }
+        .race-copy strong { display: block; overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        .race-copy span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+        .arrow { color: #aab5c4; font-size: 17px; }
+        .progress-card { margin-top: 20px; padding: 15px; color: #fff; background: var(--navy-900); border-radius: 16px; }
+        .progress-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: #a8bad0; font-size: 9px; }
+        .progress-head strong { color: #fff; font-size: 11px; }
+        .progress-track { height: 6px; overflow: hidden; background: #263b54; border-radius: 999px; }
+        .progress-track span { display: block; width: 68%; height: 100%; background: linear-gradient(90deg, #5e82ff, #82a0ff); border-radius: inherit; }
+        .progress-meta { display: flex; justify-content: space-between; margin-top: 9px; color: #879ab2; font-size: 8px; }
+        .mobile-title { margin: 0 0 4px; color: var(--ink); font-size: 22px; letter-spacing: -.06em; }
+        .mobile-subtitle { margin: 0 0 20px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+        .filter-pills { display: flex; gap: 6px; overflow-x: auto; margin: 0 -20px 15px; padding: 0 20px 2px; scrollbar-width: none; }
+        .filter-pills::-webkit-scrollbar { display: none; }
+        .pill { flex: 0 0 auto; min-height: 28px; padding: 0 11px; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 999px; font-size: 9px; font-weight: 800; }
+        .pill.active { color: #fff; background: var(--blue); border-color: var(--blue); }
+        .details-hero { position: relative; min-height: 185px; margin: 0 -20px 17px; padding: 18px 20px; color: #fff; background: linear-gradient(145deg, #142b4d, #2e5799); overflow: hidden; }
+        .details-hero::after { content: "◈"; position: absolute; right: 23px; bottom: -12px; color: rgba(255,255,255,.1); font-size: 130px; font-weight: 900; }
+        .back-button { display: inline-flex; align-items: center; gap: 6px; padding: 0; color: #66758a; background: transparent; border: 0; font-size: 10px; font-weight: 800; }
+        .details-hero .back-button { position: relative; z-index: 1; color: #d0def7; }
+        .details-hero .mobile-eyebrow { position: relative; z-index: 1; margin-top: 25px; color: #9db6e9; }
+        .details-hero h1 { position: relative; z-index: 1; max-width: 250px; margin: 0 0 9px; color: #fff; font-size: 26px; letter-spacing: -.065em; line-height: 1; }
+        .details-hero p { position: relative; z-index: 1; margin: 0; color: #c5d5f0; font-size: 10px; }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 19px; }
+        .detail-item { padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+        .detail-item span { display: block; color: var(--muted); font-size: 9px; }
+        .detail-item strong { display: block; margin-top: 5px; color: var(--ink); font-size: 12px; }
+        .rule-list { display: grid; gap: 9px; margin-bottom: 20px; }
+        .rule { display: flex; align-items: center; gap: 8px; color: #66758a; font-size: 10px; }
+        .rule i { display: grid; width: 21px; height: 21px; place-items: center; color: var(--mint); background: var(--mint-soft); border-radius: 7px; font-style: normal; font-size: 11px; }
+        .primary-wide { width: 100%; min-height: 42px; color: #fff; background: var(--blue); border: 0; border-radius: 12px; box-shadow: 0 9px 18px rgba(61,109,242,.2); font-size: 11px; font-weight: 900; }
+        .primary-wide.joined { color: var(--mint); background: var(--mint-soft); box-shadow: none; }
+        .section-gap { margin-top: 24px; }
+        .empty-mobile { padding: 38px 18px; color: var(--muted); background: #fff; border: 1px dashed #d8e0ea; border-radius: 15px; font-size: 11px; line-height: 1.5; text-align: center; }
+        .profile-card { display: flex; align-items: center; gap: 12px; padding: 15px; color: #fff; background: linear-gradient(135deg, #1a365a, #233e65); border-radius: 16px; }
+        .profile-large { display: grid; width: 47px; height: 47px; flex: 0 0 auto; place-items: center; color: #d7e1ff; background: #4a6de0; border-radius: 50%; font-size: 13px; font-weight: 900; }
+        .profile-card strong { display: block; font-size: 13px; }
+        .profile-card span { display: block; margin-top: 4px; color: #afc2df; font-size: 9px; }
+        .profile-card > .profile-large { display: grid; margin-top: 0; color: #d7e1ff; font-size: 13px; }
+        .settings-list { display: grid; gap: 8px; margin-top: 18px; }
+        .setting { display: flex; align-items: center; gap: 10px; padding: 13px; background: #fff; border: 1px solid var(--line); border-radius: 13px; }
+        .setting-icon { display: grid; width: 28px; height: 28px; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 8px; }
+        .setting strong { display: block; font-size: 10px; }
+        .setting span { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
+        .setting > .setting-icon { display: grid; flex: 0 0 auto; margin-top: 0; color: var(--blue); font-size: 13px; }
+        .setting > b { margin-left: auto; color: #a8b3c1; font-size: 15px; }
+        .ranking-list { display: grid; gap: 7px; }
+        .rank-row { display: flex; align-items: center; gap: 9px; padding: 11px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+        .rank-number { width: 19px; color: var(--muted); font-size: 10px; font-weight: 900; text-align: center; }
+        .rank-row:nth-child(1) .rank-number { color: #c69226; }
+        .rank-row:nth-child(2) .rank-number { color: #8290a2; }
+        .rank-row:nth-child(3) .rank-number { color: #b87950; }
+        .rank-avatar { display: grid; width: 30px; height: 30px; place-items: center; color: #5571c9; background: #e9eeff; border-radius: 50%; font-size: 9px; font-weight: 900; }
+        .rank-name { flex: 1; min-width: 0; }
+        .rank-name strong { display: block; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-name span { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
+        .rank-points { color: var(--ink); font-size: 10px; font-weight: 900; }
+        .bottom-nav { position: absolute; z-index: 2; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); height: 73px; padding: 9px 10px 12px; background: rgba(255,255,255,.96); border-top: 1px solid var(--line); box-shadow: 0 -8px 20px rgba(23,45,79,.04); backdrop-filter: blur(12px); }
+        .nav-item { display: grid; place-items: center; gap: 2px; padding: 0; color: #9ba7b7; background: transparent; border: 0; border-radius: 11px; font-size: 9px; font-weight: 800; }
+        .nav-item span:first-child { display: grid; width: 28px; height: 26px; place-items: center; font-size: 17px; }
+        .nav-item.active { color: var(--blue); background: #f0f4ff; }
+        .mobile-toast { position: absolute; z-index: 8; right: 14px; bottom: 82px; left: 14px; display: none; padding: 12px; color: #e8fff5; background: #102f2b; border: 1px solid #286958; border-radius: 12px; box-shadow: 0 12px 25px rgba(1,20,19,.23); font-size: 10px; line-height: 1.4; }
+        .mobile-toast.show { display: block; animation: toast-in .25s ease both; }
+        .mobile-modal-overlay { position: absolute; z-index: 12; inset: 0; display: grid; padding: 20px; place-items: center; background: rgba(2,10,20,.6); backdrop-filter: blur(5px); }
+        .mobile-modal { width: min(360px, 100%); padding: 20px; background: #fff; border-radius: 18px; box-shadow: 0 25px 70px rgba(1,13,28,.36); }
+        .mobile-modal h2 { margin: 0 0 7px; color: var(--ink); font-size: 18px; letter-spacing: -.04em; }
+        .mobile-modal p { margin: 0 0 17px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+        .notification-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .notification-close { display: grid; width: 28px; height: 28px; place-items: center; color: var(--muted); background: #f2f5f9; border: 0; border-radius: 8px; font-size: 17px; }
+        .notification-list { display: grid; gap: 8px; max-height: 330px; margin: 0 -4px 14px; overflow-y: auto; padding: 0 4px; }
+        .notification-item { display: flex; align-items: flex-start; gap: 9px; width: 100%; padding: 11px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 12px; text-align: left; }
+        .notification-item.unread { background: #f1f5ff; border-color: #d9e2ff; }
+        .notification-item:hover { border-color: #b9c9f9; }
+        .notification-dot { width: 7px; height: 7px; flex: 0 0 auto; margin-top: 4px; background: var(--blue); border-radius: 50%; }
+        .notification-item.read .notification-dot { background: #c5cfdb; }
+        .notification-copy { min-width: 0; flex: 1; }
+        .notification-copy strong { display: block; font-size: 10px; }
+        .notification-copy span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+        .notification-time { flex: 0 0 auto; color: var(--muted); font-size: 8px; }
+        .notification-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+        .notification-footer button { padding: 0; color: var(--blue); background: transparent; border: 0; font-size: 9px; font-weight: 900; }
+        .notification-footer button:last-child { color: var(--muted); }
+        .mobile-upload { display: grid; min-height: 100px; margin-bottom: 16px; place-items: center; color: var(--muted); background: #f1f4f9; border: 1px dashed #cbd5e3; border-radius: 12px; font-size: 10px; text-align: center; }
+        .modal-actions { display: flex; gap: 8px; }
+        .modal-actions button { flex: 1; min-height: 38px; border-radius: 10px; font-size: 10px; font-weight: 900; }
+        .modal-cancel { color: var(--ink); background: #f2f5f9; border: 0; }
+        .modal-confirm { color: #fff; background: var(--blue); border: 0; }
+
+        /* Admin preview */
+        .admin-shell { display: flex; min-height: calc(100vh - 64px); color: var(--ink); background: var(--canvas); }
+        .admin-sidebar { display: flex; width: 242px; flex: 0 0 auto; flex-direction: column; padding: 27px 15px 18px; color: #d9e4f4; background: linear-gradient(180deg, #0c1a2e 0%, #091523 100%); }
+        .admin-brand { display: flex; align-items: center; gap: 10px; padding: 0 11px 32px; }
+        .admin-brand-mark { display: grid; width: 36px; height: 36px; place-items: center; color: #fff; background: linear-gradient(135deg, #5c82ff, #375ee0); border-radius: 11px; font-size: 12px; font-weight: 900; }
+        .admin-brand strong { display: block; color: #f5f8ff; font-size: 12px; letter-spacing: .12em; }
+        .admin-brand strong span { color: #688bff; }
+        .admin-brand small { display: block; margin-top: 4px; color: #70829b; font-size: 9px; font-weight: 700; }
+        .admin-nav-label { padding: 0 11px 9px; color: #6f829c; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+        .admin-nav { display: grid; gap: 5px; }
+        .admin-nav-button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px; color: #8fa2bb; background: transparent; border: 0; border-radius: 10px; text-align: left; transition: .18s ease; }
+        .admin-nav-button:hover { color: #fff; background: rgba(255,255,255,.06); }
+        .admin-nav-button.active { color: #fff; background: linear-gradient(90deg, rgba(70,108,235,.3), rgba(70,108,235,.08)); box-shadow: inset 3px 0 #6686ff; }
+        .admin-nav-icon { display: grid; width: 20px; place-items: center; color: #8ba1c0; font-size: 16px; }
+        .admin-nav-button span:last-child { font-size: 12px; font-weight: 700; }
+        .admin-sidebar-spacer { flex: 1; }
+        .admin-sidebar-note { margin: 14px 6px 18px; padding: 12px; color: #9eacc0; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; font-size: 10px; line-height: 1.45; }
+        .admin-sidebar-note strong { display: block; margin-bottom: 4px; color: #dbe5f2; }
+        .admin-user { display: flex; align-items: center; gap: 9px; padding: 12px 9px 0; border-top: 1px solid rgba(255,255,255,.08); }
+        .admin-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; color: #cad7ff; background: #263d71; border-radius: 50%; font-size: 11px; font-weight: 900; }
+        .admin-user strong { display: block; color: #e6edf8; font-size: 11px; }
+        .admin-user small { display: block; margin-top: 3px; color: #71839a; font-size: 9px; }
+        .admin-main { min-width: 0; flex: 1; }
+        .admin-topbar { display: flex; align-items: center; justify-content: space-between; min-height: 73px; padding: 0 34px; background: rgba(255,255,255,.9); border-bottom: 1px solid var(--line); }
+        .admin-breadcrumb { color: var(--muted); font-size: 11px; font-weight: 700; }
+        .admin-breadcrumb strong { color: var(--ink); }
+        .admin-actions { display: flex; align-items: center; gap: 10px; }
+        .admin-search { display: flex; align-items: center; gap: 7px; width: 190px; padding: 8px 11px; color: #95a0ae; background: #f5f7fa; border: 1px solid #edf0f4; border-radius: 9px; }
+        .admin-search input { width: 100%; color: var(--ink); background: transparent; border: 0; outline: 0; font-size: 11px; }
+        .admin-bell { position: relative; display: grid; width: 33px; height: 33px; place-items: center; color: #64748a; background: #f6f8fb; border: 1px solid #edf0f4; border-radius: 9px; }
+        .admin-bell::after { content: ""; position: absolute; top: 6px; right: 6px; width: 5px; height: 5px; background: var(--red); border: 2px solid #f6f8fb; border-radius: 50%; }
+        .admin-page { max-width: 1440px; margin: 0 auto; padding: 34px 34px 48px; }
+        .admin-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
+        .admin-eyebrow { margin: 0 0 9px; color: var(--blue); font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+        .admin-page h1 { margin: 0 0 7px; color: var(--ink); font-size: clamp(26px, 3vw, 36px); letter-spacing: -.05em; line-height: 1.05; }
+        .admin-page-subtitle { max-width: 600px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+        .admin-head-actions, .admin-filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 14px; border: 1px solid transparent; border-radius: 9px; font-size: 11px; font-weight: 800; transition: .18s ease; }
+        .button-primary { color: #fff; background: var(--blue); box-shadow: 0 8px 18px rgba(61,109,242,.2); }
+        .button-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+        .button-secondary { color: var(--ink); background: #fff; border-color: var(--line); }
+        .button-secondary:hover { border-color: #c6d2e5; background: #fbfcfe; }
+        .button-quiet { min-height: 30px; padding: 0 10px; color: var(--blue); background: var(--blue-soft); border: 0; font-size: 10px; }
+        .button-danger { min-height: 30px; padding: 0 10px; color: var(--red); background: var(--red-soft); border: 0; font-size: 10px; }
+        .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 19px; }
+        .metric { position: relative; min-height: 130px; padding: 19px; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 24px rgba(22,48,88,.035); }
+        .metric::after { content: ""; position: absolute; right: -28px; bottom: -34px; width: 100px; height: 100px; background: var(--blue-soft); border-radius: 50%; }
+        .metric.mint::after { background: var(--mint-soft); }
+        .metric.amber::after { background: var(--amber-soft); }
+        .metric.navy::after { background: #e9edf7; }
+        .metric-label { display: block; margin-bottom: 14px; color: var(--muted); font-size: 10px; font-weight: 800; }
+        .metric-value { display: block; color: var(--ink); font-size: 27px; letter-spacing: -.06em; line-height: 1; }
+        .metric-trend { display: inline-flex; margin-top: 9px; color: var(--mint); font-size: 9px; font-weight: 800; }
+        .metric-trend.muted { color: var(--muted); }
+        .metric-icon { position: absolute; z-index: 1; right: 16px; top: 17px; display: grid; width: 32px; height: 32px; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 9px; font-size: 16px; }
+        .metric.mint .metric-icon { color: var(--mint); background: var(--mint-soft); }
+        .metric.amber .metric-icon { color: var(--amber); background: var(--amber-soft); }
+        .metric.navy .metric-icon { color: #637390; background: #edf0f7; }
+        .admin-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr); gap: 18px; }
+        .admin-surface { padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 17px; box-shadow: 0 8px 24px rgba(22,48,88,.035); }
+        .admin-surface + .admin-surface { margin-top: 18px; }
+        .surface-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .surface-head h2 { margin: 0 0 5px; color: var(--ink); font-size: 16px; letter-spacing: -.03em; }
+        .surface-head p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+        .text-link { color: var(--blue); font-size: 10px; font-weight: 800; white-space: nowrap; }
+        .admin-list { display: grid; gap: 2px; }
+        .admin-list-row { display: flex; align-items: center; justify-content: space-between; gap: 13px; padding: 12px 7px; border-bottom: 1px solid #f0f3f7; }
+        .admin-list-row:last-child { border-bottom: 0; }
+        .admin-list-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .list-badge { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 9px; }
+        .admin-list-copy { min-width: 0; }
+        .admin-list-copy strong { display: block; overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        .admin-list-copy span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+        .status { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; white-space: nowrap; }
+        .status::before { content: ""; width: 5px; height: 5px; background: currentColor; border-radius: 50%; }
+        .status.open, .status.verified, .status.approved { color: var(--mint); background: var(--mint-soft); }
+        .status.pending { color: var(--amber); background: var(--amber-soft); }
+        .status.scheduled { color: var(--blue); background: var(--blue-soft); }
+        .status.closed, .status.rejected { color: var(--red); background: var(--red-soft); }
+        .mini-progress { width: 70px; height: 5px; overflow: hidden; margin-top: 6px; background: #eef1f6; border-radius: 999px; }
+        .mini-progress span { display: block; height: 100%; background: var(--blue); border-radius: inherit; }
+        .quick-card { padding: 16px; background: linear-gradient(135deg, #f1f5ff, #f9fbff); border: 1px solid #dfe7fb; border-radius: 13px; }
+        .quick-card h3 { margin: 0 0 6px; color: #223a72; font-size: 13px; }
+        .quick-card p { margin: 0 0 13px; color: #61708b; font-size: 10px; line-height: 1.5; }
+        .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+        .admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 11px; margin-bottom: 16px; }
+        .search-input, .select-input { min-height: 37px; padding: 0 11px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 9px; outline: 0; font-size: 11px; }
+        .search-input { width: 225px; }
+        .search-input:focus, .select-input:focus, .form-control:focus { border-color: #9eb5ff; box-shadow: 0 0 0 3px rgba(61,109,242,.1); }
+        .table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 13px; }
+        table { width: 100%; min-width: 680px; border-collapse: collapse; }
+        th { padding: 12px 14px; color: #8794a7; background: #fafbfd; border-bottom: 1px solid var(--line); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+        td { padding: 13px 14px; border-bottom: 1px solid #eff2f6; color: #536276; font-size: 11px; vertical-align: middle; }
+        tr:last-child td { border-bottom: 0; }
+        td strong { color: var(--ink); font-size: 11px; }
+        .table-title { display: flex; align-items: center; gap: 9px; }
+        .table-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; color: #cbd8ff; background: #2d4c93; border-radius: 50%; font-size: 9px; font-weight: 900; }
+        .table-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 8px; }
+        .table-title small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+        .admin-page-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr); gap: 18px; }
+        .side-stack { display: grid; align-content: start; gap: 18px; }
+        .info-list { display: grid; gap: 12px; }
+        .info-item { display: flex; align-items: flex-start; gap: 9px; }
+        .info-item > span:first-child { display: grid; width: 29px; height: 29px; flex: 0 0 auto; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 8px; }
+        .info-item strong { display: block; font-size: 11px; }
+        .info-item p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+        .empty { padding: 30px 15px; color: var(--muted); text-align: center; font-size: 11px; }
+        .admin-modal-overlay { position: fixed; z-index: 120; inset: 0; display: grid; padding: 20px; place-items: center; background: rgba(7,17,31,.54); backdrop-filter: blur(5px); }
+        .admin-modal { width: min(590px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 23px; background: #fff; border-radius: 18px; box-shadow: 0 28px 90px rgba(3,14,31,.28); }
+        .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+        .modal-head h2 { margin: 0; color: var(--ink); font-size: 20px; letter-spacing: -.04em; }
+        .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+        .close-button { display: grid; width: 30px; height: 30px; place-items: center; color: var(--muted); background: #f4f6f9; border: 0; border-radius: 8px; font-size: 17px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+        .form-field { display: grid; gap: 6px; }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-label { color: #536276; font-size: 10px; font-weight: 800; }
+        .form-control { width: 100%; min-height: 39px; padding: 8px 10px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 8px; outline: 0; font-size: 11px; }
+        textarea.form-control { min-height: 75px; resize: vertical; }
+        .form-hint { color: var(--muted); font-size: 9px; line-height: 1.4; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 7px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
+        .toast-stack { position: fixed; z-index: 130; right: 20px; bottom: 20px; display: grid; gap: 8px; width: min(350px, calc(100vw - 40px)); }
+        .toast { display: flex; align-items: flex-start; gap: 9px; padding: 12px; color: #254f40; background: #effbf6; border: 1px solid #bcead7; border-radius: 11px; box-shadow: var(--shadow); animation: toast-in .25s ease both; font-size: 11px; line-height: 1.4; }
+        .toast strong { display: block; margin-bottom: 2px; color: #126b4b; font-size: 11px; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 1120px) {
+            .mobile-workspace { grid-template-columns: minmax(220px, 1fr) 430px; gap: 30px; }
+            .admin-sidebar { width: 210px; }
+            .metric-grid { grid-template-columns: repeat(2, 1fr); }
+            .admin-grid, .admin-page-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 780px) {
+            .global-bar { min-height: 59px; padding: 0 12px; }
+            .global-brand small, .demo-status { display: none; }
+            .global-brand strong { font-size: 10px; }
+            .mode-button { min-height: 29px; padding: 0 8px; font-size: 8px; }
+            #app { padding-top: 59px; }
+            .mobile-workspace { display: block; min-height: calc(100vh - 59px); padding: 25px 15px 32px; }
+            .device-panel { max-width: 390px; margin: 0 auto 22px; }
+            .phone-wrap { width: 100%; }
+            .phone { width: min(390px, 100%); height: min(800px, 145vw); min-height: 690px; transform: none; }
+            .admin-shell { display: block; }
+            .admin-sidebar { width: 100%; padding: 12px; }
+            .admin-brand { padding: 0 5px 12px; }
+            .admin-nav-label, .admin-sidebar-spacer, .admin-sidebar-note, .admin-user { display: none; }
+            .admin-nav { display: flex; overflow-x: auto; gap: 4px; }
+            .admin-nav-button { width: auto; flex: 0 0 auto; padding: 8px 10px; }
+            .admin-nav-button span:last-child { font-size: 10px; }
+            .admin-topbar { min-height: 58px; padding: 0 15px; }
+            .admin-search { display: none; }
+            .admin-page { padding: 26px 15px 40px; }
+            .admin-page-head { display: block; }
+            .admin-head-actions { margin-top: 16px; }
+            .admin-head-actions .button { flex: 1; }
+            .metric-grid { gap: 8px; }
+            .metric { min-height: 116px; padding: 15px; }
+            .metric-value { font-size: 24px; }
+            .admin-surface { padding: 15px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-field.full { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+    <header class="global-bar">
+        <div class="global-brand"><span class="global-mark">RT</span><span><strong>RUNNING<span>TRACKS</span></strong><small>Protótipo integrado · dados mockados</small></span></div>
+        <div class="mode-switcher" aria-label="Trocar visão do protótipo"><button class="mode-button active" data-mode="mobile">▣ Mobile</button><button class="mode-button" data-mode="admin">▤ Admin</button></div>
+        <div class="demo-status"><i></i> Sem login · sem API · sem pagamentos</div>
+    </header>
+    <main id="app"></main>
+    <div id="toast-root" class="toast-stack" aria-live="polite"></div>
+
+    <script>
+        const devices = [
+            { id: "iphone-normal", className: "iphone-normal", name: "iPhone 16", group: "Apple", platform: "iOS", meta: "6,1\" · 1179 × 2556 px" },
+            { id: "iphone-pro", className: "iphone-pro", name: "iPhone 16 Pro", group: "Apple", platform: "iOS", meta: "6,3\" · acabamento titânio" },
+            { id: "iphone-max", className: "iphone-max", name: "iPhone 16 Pro Max", group: "Apple", platform: "iOS", meta: "6,9\" · tela ampliada" },
+            { id: "android-samsung", className: "android-samsung", name: "Galaxy S25", group: "Android", platform: "Android · Samsung", meta: "6,2\" · Dynamic AMOLED" },
+            { id: "android-pixel", className: "android-pixel", name: "Pixel 9", group: "Android", platform: "Android · Google", meta: "6,3\" · Actua Display" },
+            { id: "android-xiaomi", className: "android-xiaomi", name: "Xiaomi 15", group: "Android", platform: "Android · Xiaomi", meta: "6,36\" · acabamento escuro" },
+            { id: "android-motorola", className: "android-motorola", name: "Edge 50", group: "Android", platform: "Android · Motorola", meta: "6,7\" · acabamento claro" },
+            { id: "android-oneplus", className: "android-oneplus", name: "OnePlus 13", group: "Android", platform: "Android · OnePlus", meta: "6,82\" · tela fluida" }
+        ];
+        const seed = {
+            mode: "mobile",
+            device: "iphone-normal",
+            mobile: {
+                screen: "home", selectedRace: 1, joined: false, receiptSent: false, filter: "Todos",
+                user: { name: "Claudio Ruman", initials: "CR", city: "São Paulo, SP", email: "claudio.ruman@email.com" },
+                races: [
+                    { id: 1, title: "Circuito Primavera Run", distance: "10 km", date: "15 nov 2026", local: "Parque Villa-Lobos", city: "São Paulo, SP", vacancies: "358 vagas", tone: "blue", highlight: true },
+                    { id: 2, title: "Desafio Costa Verde", distance: "21 km", date: "28 nov 2026", local: "Orla de Santos", city: "Santos, SP", vacancies: "104 vagas", tone: "mint" },
+                    { id: 3, title: "Night Run Centro", distance: "5 km", date: "06 dez 2026", local: "Centro Histórico", city: "Campinas, SP", vacancies: "582 vagas", tone: "amber" },
+                    { id: 4, title: "Volta do Lago", distance: "12 km", date: "22 out 2026", local: "Parque Taquaral", city: "Campinas, SP", vacancies: "Encerrada", tone: "blue", closed: true }
+                ],
+                ranking: [
+                    { name: "Camila Nunes", initials: "CN", points: "2.840 pts" },
+                    { name: "João Pedro Lima", initials: "JL", points: "2.675 pts" },
+                    { name: "Claudio Ruman", initials: "CR", points: "2.510 pts" },
+                    { name: "Rafael Mendes", initials: "RM", points: "2.310 pts" }
+                ],
+                notifications: [
+                    { id: 1, title: "Inscrição confirmada", text: "Sua inscrição no Circuito Primavera Run está pronta para você.", time: "há 12 min", read: false },
+                    { id: 2, title: "Ranking atualizado", text: "Você subiu 4 posições e agora está entre os 12% melhores.", time: "há 1 h", read: false }
+                ]
+            },
+            admin: {
+                view: "dashboard", raceSearch: "", raceStatus: "all", userSearch: "", userFilter: "all", receiptFilter: "all",
+                users: [
+                    { id: 1, name: "Claudio Ruman", email: "claudio.ruman@email.com", city: "São Paulo, SP", registered: "Hoje, 09:42", verified: false, initials: "CR" },
+                    { id: 2, name: "Rafael Mendes", email: "rafael.mendes@email.com", city: "Campinas, SP", registered: "Hoje, 08:18", verified: false, initials: "RM" },
+                    { id: 3, name: "Camila Nunes", email: "camila.nunes@email.com", city: "Santos, SP", registered: "Ontem, 17:06", verified: true, initials: "CN" },
+                    { id: 4, name: "João Pedro Lima", email: "joao.lima@email.com", city: "Sorocaba, SP", registered: "Ontem, 14:21", verified: true, initials: "JL" },
+                    { id: 5, name: "Beatriz Alves", email: "beatriz.alves@email.com", city: "Jundiaí, SP", registered: "25/10/2026", verified: false, initials: "BA" }
+                ],
+                races: [
+                    { id: 101, name: "Circuito Primavera Run", distance: "10 km", date: "15/11/2026", city: "Parque Villa-Lobos · São Paulo", status: "open", enrolled: 842, capacity: 1200, color: "blue" },
+                    { id: 102, name: "Desafio Costa Verde", distance: "21 km", date: "28/11/2026", city: "Orla de Santos · Santos", status: "scheduled", enrolled: 396, capacity: 500, color: "mint" },
+                    { id: 103, name: "Night Run Centro", distance: "5 km", date: "06/12/2026", city: "Centro Histórico · Campinas", status: "open", enrolled: 218, capacity: 800, color: "amber" },
+                    { id: 104, name: "Volta do Lago", distance: "12 km", date: "22/10/2026", city: "Parque Taquaral · Campinas", status: "closed", enrolled: 630, capacity: 630, color: "purple" }
+                ],
+                receipts: [
+                    { id: 201, runner: "Claudio Ruman", race: "Circuito Primavera Run", sent: "há 8 min", type: "GPS + foto", status: "pending", initials: "CR" },
+                    { id: 202, runner: "Camila Nunes", race: "Volta do Lago", sent: "há 22 min", type: "Relógio GPS", status: "approved", initials: "CN" },
+                    { id: 203, runner: "Rafael Mendes", race: "Desafio Costa Verde", sent: "há 1 h", type: "Print do app", status: "pending", initials: "RM" }
+                ],
+                rankings: [
+                    { position: 1, name: "Camila Nunes", points: 2840, races: 12, trend: "↑ 2", initials: "CN" },
+                    { position: 2, name: "João Pedro Lima", points: 2675, races: 11, trend: "↑ 1", initials: "JL" },
+                    { position: 3, name: "Claudio Ruman", points: 2510, races: 10, trend: "—", initials: "CR" },
+                    { position: 4, name: "Rafael Mendes", points: 2310, races: 9, trend: "↑ 3", initials: "RM" }
+                ]
+            }
+        };
+        let state = JSON.parse(JSON.stringify(seed));
+        const app = document.getElementById("app");
+        const toastRoot = document.getElementById("toast-root");
+
+        function esc(value) { return String(value ?? "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character])); }
+        function mobileRace(id) { return state.mobile.races.find(race => race.id === Number(id)); }
+        function adminStatus(status) { return ({ open: "Aberta", scheduled: "Programada", closed: "Encerrada", pending: "Pendente", approved: "Aprovado", rejected: "Recusado" })[status] || status; }
+        function adminStatusClass(status) { return status || "pending"; }
+        function raceIcon(color) { return ({ blue: "◈", mint: "⌁", amber: "✦", purple: "◉" })[color] || "◈"; }
+        function showToast(title, message, error = false) { const toast = document.createElement("div"); toast.className = "toast"; toast.innerHTML = `<span>${error ? "!" : "✓"}</span><div><strong>${esc(title)}</strong>${esc(message)}</div>`; toastRoot.appendChild(toast); setTimeout(() => toast.remove(), 3600); }
+
+        function render() {
+            document.querySelectorAll(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === state.mode));
+            app.innerHTML = state.mode === "mobile" ? mobileShell() : adminShell();
+            if (state.mode === "mobile") { renderMobileScreen(); renderDevicePicker(); applyDevice(); }
+            else renderAdminContent();
+        }
+
+        function renderDevicePicker() {
+            const group = name => devices.filter(device => device.group === name).map(device => `<button class="device-option ${state.device === device.id ? "active" : ""}" data-device="${device.id}"><strong>${device.name}</strong><small>${device.platform}</small></button>`).join("");
+            document.getElementById("apple-devices").innerHTML = group("Apple");
+            document.getElementById("android-devices").innerHTML = group("Android");
+            const current = devices.find(device => device.id === state.device) || devices[0];
+            document.getElementById("device-platform").textContent = current.platform;
+            document.getElementById("device-meta").textContent = `${current.name} · ${current.meta}`;
+        }
+        function applyDevice() {
+            const current = devices.find(device => device.id === state.device) || devices[0];
+            const phone = document.getElementById("phone-device");
+            phone.className = `phone ${current.className} ${current.group === "Android" ? "android" : "iphone"}`;
+        }
+        function mobileShell() {
+            return `<div class="mobile-workspace"><section class="device-panel"><h1>Celulares disponíveis</h1><p>Troque o aparelho para revisar como a mesma experiência se adapta a diferentes telas.</p><div class="device-picker"><div class="device-picker-head"><strong>Escolha um aparelho</strong><span id="device-platform">iOS</span></div><span class="device-group-label">Apple</span><div id="apple-devices" class="device-options"></div><span class="device-group-label">Android</span><div id="android-devices" class="device-options"></div><div id="device-meta" class="device-meta"></div></div><div class="mobile-note"><strong>Protótipo integrado</strong>Use o botão no topo para alternar entre a visão Mobile e o Admin. Dados mockados, sem login, API ou pagamento.</div></section><section class="phone-wrap" aria-label="Prévia mobile"><div class="phone-shadow"></div><div id="phone-device" class="phone iphone-normal"><div class="screen"><div class="status-bar"><span>09:41</span><span class="status-icons">▮▮▮ ◔ ▰</span></div><div id="mobile-screen" class="mobile-screen"></div><div id="mobile-nav"></div><div id="mobile-toast" class="mobile-toast"></div><div id="mobile-modal"></div></div></div></section></div>`;
+        }
+        function mobileTop() { const unread = state.mobile.notifications.filter(item => !item.read).length; return `<div class="mobile-app-top"><div class="greeting">Bom dia, <strong>${esc(state.mobile.user.name.split(" ")[0])}</strong></div><div class="mobile-top-right"><button class="mobile-bell" data-mobile-action="notify" aria-label="Notificações">♢${unread ? `<b class="mobile-bell-count">${unread}</b>` : ""}</button><button class="profile-chip" data-mobile-screen="profile">${state.mobile.user.initials}</button></div></div>`; }
+        function mobileSectionTitle(title, actionText = "Ver tudo", action = "races") { return `<div class="mobile-section-title"><h2>${title}</h2><button data-mobile-screen="${action}">${actionText}</button></div>`; }
+        function mobileRaceCard(race) { return `<button class="mobile-race-card" data-mobile-action="details" data-id="${race.id}" ${race.closed ? "disabled" : ""}><span class="race-art ${race.tone}">${race.tone === "mint" ? "⌁" : race.tone === "amber" ? "✦" : "◈"}</span><span class="race-copy"><strong>${esc(race.title)}</strong><span>${esc(race.date)} · ${esc(race.distance)} · ${esc(race.vacancies)}</span></span><span class="arrow">›</span></button>`; }
+        function mobileHome() { const highlight = state.mobile.races.find(race => race.highlight); return `<div class="screen-scroll">${mobileTop()}<p class="mobile-eyebrow">DESAFIO EM DESTAQUE</p><section class="hero-card"><div class="hero-kicker">Próxima experiência</div><h2>${esc(highlight.title)}</h2><p>${esc(highlight.date)} · ${esc(highlight.distance)} · ${esc(highlight.local)}</p><button class="hero-button" data-mobile-action="details" data-id="${highlight.id}">Ver detalhes →</button></section><div class="stat-grid"><div class="stat"><strong>16</strong><span>corridas</span></div><div class="stat"><strong>142 km</strong><span>percorridos</span></div><div class="stat"><strong>Top 12%</strong><span>ranking</span></div></div>${mobileSectionTitle("Próximas corridas")}<div class="mobile-race-list">${state.mobile.races.filter(race => !race.closed).slice(0, 3).map(mobileRaceCard).join("")}</div><section class="progress-card"><div class="progress-head"><strong>Desafio mensal</strong><span>68% concluído</span></div><div class="progress-track"><span></span></div><div class="progress-meta"><span>68 km registrados</span><span>100 km</span></div></section><div class="section-gap">${mobileSectionTitle("Minha posição", "Ver ranking", "ranking")}<button class="mobile-race-card" data-mobile-screen="ranking"><span class="rank-avatar">3º</span><span class="race-copy"><strong>Você está subindo!</strong><span>+4 posições desde a última semana</span></span><span class="arrow">›</span></button></div></div>`; }
+        function mobileRaces() { const filtered = state.mobile.races.filter(race => state.mobile.filter === "Todos" || (state.mobile.filter === "Abertas" && !race.closed) || (state.mobile.filter === "Encerradas" && race.closed)); return `<div class="screen-scroll"><div class="mobile-app-top"><div><p class="mobile-eyebrow">EXPLORAR</p><h1 class="mobile-title">Corridas</h1></div><button class="profile-chip" data-mobile-screen="profile">${state.mobile.user.initials}</button></div><p class="mobile-subtitle">Encontre um desafio, escolha sua distância e corra no seu ritmo.</p><div class="filter-pills">${["Todos", "Abertas", "Encerradas"].map(item => `<button class="pill ${state.mobile.filter === item ? "active" : ""}" data-mobile-filter="${item}">${item}</button>`).join("")}</div><div class="mobile-race-list">${filtered.length ? filtered.map(mobileRaceCard).join("") : `<div class="empty-mobile">Nenhuma corrida encontrada neste filtro.</div>`}</div><div class="mobile-note" style="margin-top:20px"><strong>Inscrições demonstrativas</strong>As vagas, preços e confirmação são apenas visuais. Nada é enviado ou cobrado.</div></div>`; }
+        function mobileDetails() { const race = mobileRace(state.mobile.selectedRace || 1) || state.mobile.races[0]; const joined = state.mobile.joined && race.id === 1; return `<div class="screen-scroll" style="padding-top:0"><section class="details-hero"><button class="back-button" data-mobile-screen="races">‹ Voltar para corridas</button><p class="mobile-eyebrow">DETALHES DA EXPERIÊNCIA</p><h1>${esc(race.title)}</h1><p>${esc(race.city)} · ${esc(race.date)}</p></section><div class="detail-grid"><div class="detail-item"><span>Distância</span><strong>${esc(race.distance)}</strong></div><div class="detail-item"><span>Data</span><strong>${esc(race.date)}</strong></div><div class="detail-item"><span>Local</span><strong>${esc(race.local)}</strong></div><div class="detail-item"><span>Vagas</span><strong>${esc(race.vacancies)}</strong></div></div><p class="mobile-eyebrow">COMO FUNCIONA</p><div class="rule-list"><div class="rule"><i>✓</i><span>Registre sua corrida pelo aplicativo de sua preferência.</span></div><div class="rule"><i>✓</i><span>Envie o comprovante após concluir o percurso.</span></div><div class="rule"><i>✓</i><span>Acompanhe a aprovação e seus pontos no ranking.</span></div></div><button class="primary-wide ${joined ? "joined" : ""}" data-mobile-action="join">${joined ? "✓ Inscrição simulada confirmada" : "Simular inscrição gratuita"}</button><p style="margin:11px 0 0;color:var(--muted);font-size:8px;text-align:center">Sem pagamento · sem reserva real · modo demonstração</p></div>`; }
+        function mobileMyRaces() { const race = state.mobile.races[0]; return `<div class="screen-scroll">${mobileTop()}<p class="mobile-eyebrow">MEU CALENDÁRIO</p><h1 class="mobile-title">Minhas corridas</h1><p class="mobile-subtitle">Acompanhe suas inscrições e envie atividades concluídas.</p>${state.mobile.joined ? `<div class="mobile-race-card" style="display:block;padding:15px;border-color:#cfdbff"><div style="display:flex;align-items:center;gap:11px"><span class="race-art blue">◈</span><span class="race-copy"><strong>${esc(race.title)}</strong><span>${esc(race.date)} · ${esc(race.distance)}</span></span></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:15px"><span style="color:var(--mint);font-size:9px;font-weight:900">● Inscrição confirmada</span><span style="color:var(--muted);font-size:9px">${state.mobile.receiptSent ? "Comprovante enviado" : "Aguardando atividade"}</span></div><button class="primary-wide" style="margin-top:15px" data-mobile-action="receipt">${state.mobile.receiptSent ? "Ver comprovante enviado" : "Enviar comprovante"}</button></div>` : `<div class="empty-mobile"><div style="font-size:25px;margin-bottom:9px">◈</div><strong style="display:block;color:var(--ink);margin-bottom:5px">Você ainda não está inscrito</strong>Explore as corridas disponíveis e simule sua primeira inscrição.</div>`}<div class="section-gap">${mobileSectionTitle("Histórico recente", "Ver ranking", "ranking")}<div class="mobile-race-list"><div class="mobile-race-card"><span class="race-art mint">✓</span><span class="race-copy"><strong>Volta do Lago</strong><span>Concluída · 12 km · 22 out 2026</span></span><span style="color:var(--mint);font-size:10px;font-weight:900">+310 pts</span></div><div class="mobile-race-card"><span class="race-art amber">✓</span><span class="race-copy"><strong>Night Run Centro</strong><span>Concluída · 5 km · 06 out 2026</span></span><span style="color:var(--mint);font-size:10px;font-weight:900">+180 pts</span></div></div></div></div>`; }
+        function mobileRanking() { return `<div class="screen-scroll">${mobileTop()}<button class="back-button" data-mobile-screen="home">‹ Voltar</button><p class="mobile-eyebrow" style="margin-top:23px">COMUNIDADE</p><h1 class="mobile-title">Ranking geral</h1><p class="mobile-subtitle">Pontuação demonstrativa do ciclo Outubro — Dezembro.</p><div class="profile-card"><span class="profile-large">CR</span><span><strong>3º lugar · Claudio Ruman</strong><span>2.510 pontos · Top 12% da comunidade</span></span></div><div class="ranking-list" style="margin-top:15px">${state.mobile.ranking.map((item, index) => `<div class="rank-row"><span class="rank-number">${index + 1}º</span><span class="rank-avatar">${item.initials}</span><span class="rank-name"><strong>${esc(item.name)}</strong><span>${index === 2 ? "Sua posição" : "Atleta verificado"}</span></span><span class="rank-points">${item.points}</span></div>`).join("")}</div><div class="mobile-note" style="margin-top:19px"><strong>Ranking em modo demo</strong>Pontos e posições são fictícios e não alteram premiações ou resultados reais.</div></div>`; }
+        function mobileProfile() { return `<div class="screen-scroll">${mobileTop()}<p class="mobile-eyebrow">MINHA CONTA</p><h1 class="mobile-title">Perfil</h1><p class="mobile-subtitle">Gerencie suas informações e preferências.</p><div class="profile-card"><span class="profile-large">${state.mobile.user.initials}</span><span><strong>${esc(state.mobile.user.name)}</strong><span>${esc(state.mobile.user.email)}<br>${esc(state.mobile.user.city)}</span></span></div><div class="settings-list"><div class="setting"><span class="setting-icon">♙</span><span><strong>Dados pessoais</strong><span>Nome, e-mail e localização</span></span><b>›</b></div><div class="setting"><span class="setting-icon">♧</span><span><strong>Preferências</strong><span>Notificações e privacidade</span></span><b>›</b></div><div class="setting"><span class="setting-icon">?</span><span><strong>Ajuda e suporte</strong><span>Fale com a equipe RunningTracks</span></span><b>›</b></div><div class="setting"><span class="setting-icon">ⓘ</span><span><strong>Sobre o aplicativo</strong><span>Versão de demonstração 0.1</span></span><b>›</b></div></div></div>`; }
+        function renderMobileScreen() { const screen = document.getElementById("mobile-screen"); const view = ({ home: mobileHome, races: mobileRaces, details: mobileDetails, "my-races": mobileMyRaces, ranking: mobileRanking, profile: mobileProfile })[state.mobile.screen] || mobileHome; screen.innerHTML = view(); const bottom = `<nav class="bottom-nav"><button class="nav-item ${state.mobile.screen === "home" ? "active" : ""}" data-mobile-screen="home"><span>⌂</span><span>Início</span></button><button class="nav-item ${state.mobile.screen === "races" || state.mobile.screen === "details" ? "active" : ""}" data-mobile-screen="races"><span>◈</span><span>Corridas</span></button><button class="nav-item ${state.mobile.screen === "my-races" ? "active" : ""}" data-mobile-screen="my-races"><span>✓</span><span>Minhas</span></button><button class="nav-item ${state.mobile.screen === "profile" ? "active" : ""}" data-mobile-screen="profile"><span>♙</span><span>Perfil</span></button></nav>`; document.getElementById("mobile-nav").innerHTML = bottom; }
+        function showMobileModal(content) { document.getElementById("mobile-modal").innerHTML = `<div class="mobile-modal-overlay"><section class="mobile-modal">${content}</section></div>`; }
+        function closeMobileModal() { document.getElementById("mobile-modal").innerHTML = ""; }
+        function mobileToast(message) { const toast = document.getElementById("mobile-toast"); if (!toast) return; toast.textContent = message; toast.classList.add("show"); clearTimeout(window.__demoMobileToast); window.__demoMobileToast = setTimeout(() => toast.classList.remove("show"), 3000); }
+        function notificationModal() { const unread = state.mobile.notifications.filter(item => !item.read).length; showMobileModal(`<div class="notification-head"><div><h2>Notificações</h2><p>${unread ? `${unread} não lidas` : "Tudo lido"} · mensagens da sua conta</p></div><button class="notification-close" data-mobile-action="close-modal">×</button></div><div class="notification-list">${state.mobile.notifications.map(item => `<button class="notification-item ${item.read ? "read" : "unread"}" data-mobile-action="read-notification" data-id="${item.id}"><span class="notification-dot"></span><span class="notification-copy"><strong>${esc(item.title)}</strong><span>${esc(item.text)}</span></span><span class="notification-time">${esc(item.time)}</span></button>`).join("")}</div><div class="notification-footer"><button data-mobile-action="mark-notifications">Marcar todas como lidas</button><button data-mobile-action="close-modal">Fechar</button></div>`); }
+        function receiptModal() { showMobileModal(`<h2>Enviar comprovante</h2><p>Escolha uma evidência para simular o envio. Nenhum arquivo será selecionado ou carregado.</p><div class="mobile-upload">▧<br>Área de upload mockada</div><div class="modal-actions"><button class="modal-cancel" data-mobile-action="close-modal">Cancelar</button><button class="modal-confirm" data-mobile-action="send-receipt">Simular envio</button></div>`); }
+
+        function adminShell() { const names = { dashboard: "Visão geral", races: "Corridas", users: "Cadastros", receipts: "Comprovantes", ranking: "Ranking", reports: "Relatórios", settings: "Configurações" }; return `<div class="admin-shell"><aside class="admin-sidebar"><div class="admin-brand"><span class="admin-brand-mark">RT</span><span><strong>RUNNING<span>TRACKS</span></strong><small>Console operacional</small></span></div><div class="admin-nav-label">GESTÃO</div><nav class="admin-nav">${[["dashboard", "⌂", "Visão geral"], ["races", "◈", "Corridas"], ["users", "♙", "Cadastros"], ["receipts", "▣", "Comprovantes"], ["ranking", "♛", "Ranking"], ["reports", "▥", "Relatórios"], ["settings", "⚙", "Configurações"]].map(([id, icon, label]) => `<button class="admin-nav-button ${state.admin.view === id ? "active" : ""}" data-admin-view="${id}"><span class="admin-nav-icon">${icon}</span><span>${label}</span></button>`).join("")}</nav><div class="admin-sidebar-spacer"></div><div class="admin-sidebar-note"><strong>Ambiente de demonstração</strong>Nenhuma ação é enviada para a API. Tudo volta ao estado inicial ao recarregar.</div><div class="admin-user"><span class="admin-avatar">CR</span><span><strong>Claudio Ruman</strong><small>Administrador · mock</small></span></div></aside><div class="admin-main"><header class="admin-topbar"><div class="admin-breadcrumb">RunningTracks <span>/</span> <strong>${names[state.admin.view]}</strong></div><div class="admin-actions"><label class="admin-search">⌕<input id="admin-global-search" type="search" placeholder="Buscar no painel"></label><button class="admin-bell" data-admin-action="notifications">♢</button></div></header><div id="admin-content"></div></div><div id="admin-modal"></div></div>`; }
+        function adminHead(eyebrow, title, subtitle, actions = "") { return `<div class="admin-page-head"><div><p class="admin-eyebrow">${eyebrow}</p><h1>${title}</h1><p class="admin-page-subtitle">${subtitle}</p></div><div class="admin-head-actions">${actions}</div></div>`; }
+        function adminSurface(title, subtitle, body, action = "") { return `<section class="admin-surface"><div class="surface-head"><div><h2>${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ""}</div>${action}</div>${body}</section>`; }
+        function adminMetric(icon, label, value, trend, tone = "") { return `<article class="metric ${tone}"><span class="metric-icon">${icon}</span><span class="metric-label">${label}</span><strong class="metric-value">${value}</strong><span class="metric-trend ${trend === "—" ? "muted" : ""}">${trend}</span></article>`; }
+        function adminPersonCell(person) { return `<div class="table-title"><span class="table-avatar">${esc(person.initials)}</span><span><strong>${esc(person.name)}</strong><small>${esc(person.email || person.type || "Participante")}</small></span></div>`; }
+        function adminRaceStatus(status) { return `<span class="status ${adminStatusClass(status)}">${adminStatus(status)}</span>`; }
+        function adminFilteredRaces() { return state.admin.races.filter(race => (state.admin.raceStatus === "all" || race.status === state.admin.raceStatus) && `${race.name} ${race.city}`.toLowerCase().includes(state.admin.raceSearch.toLowerCase())); }
+        function adminFilteredUsers() { return state.admin.users.filter(user => (state.admin.userFilter === "all" || (state.admin.userFilter === "pending" && !user.verified) || (state.admin.userFilter === "verified" && user.verified)) && `${user.name} ${user.email} ${user.city}`.toLowerCase().includes(state.admin.userSearch.toLowerCase())); }
+        function renderAdminContent() { const content = document.getElementById("admin-content"); const view = ({ dashboard: adminDashboard, races: adminRaces, users: adminUsers, receipts: adminReceipts, ranking: adminRanking, reports: adminReports, settings: adminSettings })[state.admin.view] || adminDashboard; content.innerHTML = view(); }
+        function adminDashboard() { const pending = state.admin.users.filter(user => !user.verified); const openRaces = state.admin.races.filter(race => race.status === "open" || race.status === "scheduled").length; const available = state.admin.races.reduce((total, race) => total + Math.max(0, race.capacity - race.enrolled), 0); return `<div class="admin-page">${adminHead("PAINEL OPERACIONAL", "Bom dia, Claudio", "Acompanhe o que precisa da sua atenção e simule as principais rotinas da plataforma.", `<button class="button button-secondary" data-admin-action="reset">↻ Restaurar demo</button><button class="button button-primary" data-admin-action="new-race">＋ Nova corrida</button>`)}<section class="metric-grid">${adminMetric("◈", "Corridas no catálogo", state.admin.races.length, "↑ 2 neste mês", "navy")}${adminMetric("◉", "Corridas disponíveis", openRaces, "↑ 12% vs. anterior")}${adminMetric("♙", "Cadastros pendentes", pending.length, "Revisão recomendada", "amber")}${adminMetric("⌁", "Vagas disponíveis", available.toLocaleString("pt-BR"), "Capacidade do catálogo", "mint")}</section><section class="admin-grid">${adminSurface("Próximas corridas", "Calendário operacional da plataforma.", `<div class="admin-list">${state.admin.races.filter(race => race.status !== "closed").slice(0, 4).map(race => `<div class="admin-list-row"><div class="admin-list-main"><span class="list-badge">${raceIcon(race.color)}</span><div class="admin-list-copy"><strong>${esc(race.name)}</strong><span>${esc(race.date)} · ${esc(race.distance)} · ${esc(race.city)}</span></div></div><div>${adminRaceStatus(race.status)}<div class="mini-progress"><span style="width:${Math.min(100, Math.round(race.enrolled / race.capacity * 100))}%"></span></div></div></div>`).join("")}</div>`, `<button class="button button-quiet" data-admin-view="races">Ver catálogo</button>`)}<div class="side-stack">${adminSurface("Fila de cadastros", "Contas aguardando confirmação.", pending.length ? `<div class="admin-list">${pending.slice(0, 4).map(user => `<div class="admin-list-row"><div class="admin-list-main"><span class="table-avatar">${user.initials}</span><div class="admin-list-copy"><strong>${esc(user.name)}</strong><span>${esc(user.registered)} · ${esc(user.city)}</span></div></div><button class="button button-quiet" data-admin-action="verify-user" data-id="${user.id}">Verificar</button></div>`).join("")}</div>` : `<div class="empty">Nenhum cadastro pendente.</div>`, `<button class="button button-quiet" data-admin-view="users">Abrir fila</button>`)}<div class="quick-card"><h3>Rotina rápida</h3><p>Simule a criação de uma corrida ou revise comprovantes sem alterar nenhum dado real.</p><div class="quick-actions"><button class="button button-primary" data-admin-action="new-race">＋ Criar corrida</button><button class="button button-secondary" data-admin-view="receipts">Revisar</button></div></div></div></section></div>`; }
+        function adminRaces() { const races = adminFilteredRaces(); return `<div class="admin-page">${adminHead("CATÁLOGO OPERACIONAL", "Corridas", "Crie eventos, acompanhe ocupação e simule o calendário de desafios.", `<button class="button button-primary" data-admin-action="new-race">＋ Nova corrida</button>`)}<div class="admin-toolbar"><div class="admin-filter-group"><input class="search-input" data-admin-filter="raceSearch" value="${esc(state.admin.raceSearch)}" placeholder="Buscar corrida ou cidade"><select class="select-input" data-admin-filter="raceStatus"><option value="all" ${state.admin.raceStatus === "all" ? "selected" : ""}>Todos os status</option><option value="open" ${state.admin.raceStatus === "open" ? "selected" : ""}>Abertas</option><option value="scheduled" ${state.admin.raceStatus === "scheduled" ? "selected" : ""}>Programadas</option><option value="closed" ${state.admin.raceStatus === "closed" ? "selected" : ""}>Encerradas</option></select></div><span class="status scheduled">Estado local da demo</span></div><div class="table-wrap"><table><thead><tr><th>Corrida</th><th>Data e local</th><th>Ocupação</th><th>Status</th><th></th></tr></thead><tbody>${races.length ? races.map(race => `<tr><td><div class="table-title"><span class="table-icon">${raceIcon(race.color)}</span><span><strong>${esc(race.name)}</strong><small>${esc(race.distance)} · ID #${race.id}</small></span></div></td><td>${esc(race.date)}<small style="display:block;margin-top:3px;color:var(--muted);font-size:9px">${esc(race.city)}</small></td><td><strong>${race.enrolled}</strong> / ${race.capacity}<div class="mini-progress"><span style="width:${Math.min(100, Math.round(race.enrolled / race.capacity * 100))}%"></span></div></td><td>${adminRaceStatus(race.status)}</td><td><button class="button button-quiet" data-admin-action="race-detail" data-id="${race.id}">Detalhes</button></td></tr>`).join("") : `<tr><td colspan="5"><div class="empty">Nenhuma corrida encontrada.</div></td></tr>`}</tbody></table></div></div>`; }
+        function adminUsers() { const users = adminFilteredUsers(); return `<div class="admin-page">${adminHead("OPERAÇÃO DE USUÁRIOS", "Cadastros", "Revise participantes e altere o status de verificação em um fluxo simples.", `<button class="button button-secondary" data-admin-action="export">⇩ Exportar lista</button>`)}<div class="admin-toolbar"><div class="admin-filter-group"><input class="search-input" data-admin-filter="userSearch" value="${esc(state.admin.userSearch)}" placeholder="Buscar nome, e-mail ou cidade"><select class="select-input" data-admin-filter="userFilter"><option value="all" ${state.admin.userFilter === "all" ? "selected" : ""}>Todos os cadastros</option><option value="pending" ${state.admin.userFilter === "pending" ? "selected" : ""}>Pendentes</option><option value="verified" ${state.admin.userFilter === "verified" ? "selected" : ""}>Verificados</option></select></div><span class="status pending">${state.admin.users.filter(user => !user.verified).length} pendentes</span></div><div class="table-wrap"><table><thead><tr><th>Participante</th><th>Localização</th><th>Cadastro</th><th>Status</th><th>Ação</th></tr></thead><tbody>${users.length ? users.map(user => `<tr><td>${adminPersonCell(user)}</td><td>${esc(user.city)}</td><td>${esc(user.registered)}</td><td>${user.verified ? '<span class="status verified">Verificado</span>' : '<span class="status pending">Pendente</span>'}</td><td><button class="button ${user.verified ? "button-danger" : "button-quiet"}" data-admin-action="verify-user" data-id="${user.id}">${user.verified ? "Desfazer" : "Verificar"}</button></td></tr>`).join("") : `<tr><td colspan="5"><div class="empty">Nenhum cadastro encontrado.</div></td></tr>`}</tbody></table></div></div>`; }
+        function adminReceipts() { const receipts = state.admin.receipts.filter(receipt => state.admin.receiptFilter === "all" || receipt.status === state.admin.receiptFilter); return `<div class="admin-page">${adminHead("VALIDAÇÃO DE ATIVIDADES", "Comprovantes", "Aprove ou recuse atividades enviadas pelos participantes em modo simulado.", `<button class="button button-secondary" data-admin-action="export">⇩ Exportar relatório</button>`)}<div class="admin-toolbar"><div class="admin-filter-group"><select class="select-input" data-admin-filter="receiptFilter"><option value="all" ${state.admin.receiptFilter === "all" ? "selected" : ""}>Todos os comprovantes</option><option value="pending" ${state.admin.receiptFilter === "pending" ? "selected" : ""}>Pendentes</option><option value="approved" ${state.admin.receiptFilter === "approved" ? "selected" : ""}>Aprovados</option><option value="rejected" ${state.admin.receiptFilter === "rejected" ? "selected" : ""}>Recusados</option></select></div><span class="status pending">${state.admin.receipts.filter(receipt => receipt.status === "pending").length} para revisar</span></div><div class="table-wrap"><table><thead><tr><th>Participante</th><th>Corrida</th><th>Enviado</th><th>Status</th><th>Ações</th></tr></thead><tbody>${receipts.map(receipt => `<tr><td>${adminPersonCell({ name: receipt.runner, initials: receipt.initials, type: receipt.type })}</td><td><strong>${esc(receipt.race)}</strong></td><td>${esc(receipt.sent)}</td><td>${adminRaceStatus(receipt.status)}</td><td><button class="button button-quiet" data-admin-action="receipt-view" data-id="${receipt.id}">Abrir</button></td></tr>`).join("")}</tbody></table></div></div>`; }
+        function adminRanking() { return `<div class="admin-page">${adminHead("PERFORMANCE DA COMUNIDADE", "Ranking", "Uma visão demonstrativa de pontos, participações e evolução dos atletas.", `<button class="button button-secondary" data-admin-action="export">⇩ Exportar ranking</button>`)}<div class="admin-page-grid"><div class="admin-surface"><div class="surface-head"><div><h2>Ranking geral</h2><p>Atualização simulada em 27/10/2026 às 10:00.</p></div><span class="status open">Ativo</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Atleta</th><th>Pontos</th><th>Corridas</th><th>Movimento</th></tr></thead><tbody>${state.admin.rankings.map(item => `<tr><td><strong>${item.position === 1 ? "🥇" : item.position === 2 ? "🥈" : item.position === 3 ? "🥉" : item.position}</strong></td><td>${adminPersonCell({ name: item.name, initials: item.initials, type: "Atleta verificado" })}</td><td><strong>${item.points.toLocaleString("pt-BR")}</strong> pts</td><td>${item.races}</td><td><span style="color:${item.trend.includes("↓") ? "var(--red)" : item.trend === "—" ? "var(--muted)" : "var(--mint)"};font-weight:800">${item.trend}</span></td></tr>`).join("")}</tbody></table></div></div><div class="side-stack">${adminSurface("Critério atual", "Configuração demonstrativa.", `<div class="info-list"><div class="info-item"><span>✦</span><div><strong>Distância concluída</strong><p>1 ponto a cada quilômetro validado.</p></div></div><div class="info-item"><span>♛</span><div><strong>Participação</strong><p>Bônus de 50 pontos por corrida concluída.</p></div></div><div class="info-item"><span>◉</span><div><strong>Consistência</strong><p>Multiplicador para participação semanal.</p></div></div></div>`)}</div></div></div>`; }
+        function adminReports() { return `<div class="admin-page">${adminHead("INTELIGÊNCIA OPERACIONAL", "Relatórios", "Indicadores de exemplo para acompanhar aquisição, ocupação e retenção.", `<button class="button button-secondary" data-admin-action="export">⇩ Gerar relatório</button>`)}<section class="metric-grid">${adminMetric("♙", "Novos participantes", "1.284", "↑ 18,6% no período")}${adminMetric("◈", "Inscrições simuladas", "2.410", "↑ 9,4% no período", "mint")}${adminMetric("▣", "Atividades analisadas", "1.893", "↑ 12,1% no período", "navy")}${adminMetric("⌁", "Taxa de conclusão", "76,8%", "↑ 4,2 p.p.", "amber")}</section><div class="admin-page-grid"><div class="admin-surface"><div class="surface-head"><div><h2>Inscrições por período</h2><p>Volume ilustrativo — nenhum pagamento é processado.</p></div></div><div class="info-list"><div class="info-item"><span>↗</span><div><strong>Novembro</strong><p>3.180 inscrições simuladas no período.</p></div></div><div class="info-item"><span>↗</span><div><strong>Dezembro</strong><p>1.920 inscrições simuladas no período.</p></div></div><div class="info-item"><span>↗</span><div><strong>Conclusão</strong><p>76,8% das atividades foram validadas na demo.</p></div></div></div></div><div class="side-stack">${adminSurface("Exportação simulada", "Nenhum arquivo será criado.", `<div class="quick-card"><h3>Relatório operacional</h3><p>O botão apenas exibe feedback visual.</p><button class="button button-primary" data-admin-action="export">Simular exportação</button></div>`)}</div></div></div>`; }
+        function adminSettings() { return `<div class="admin-page">${adminHead("CONFIGURAÇÃO DA EXPERIÊNCIA", "Configurações", "Preferências visuais e regras exploráveis no protótipo.", `<button class="button button-primary" data-admin-action="save-settings">Salvar preferências</button>`)}<div class="admin-page-grid"><div class="admin-surface"><div class="surface-head"><div><h2>Preferências operacionais</h2><p>Controles visuais com resposta simulada.</p></div></div><div class="admin-list"><div class="admin-list-row"><div class="admin-list-copy"><strong>Revisão manual de comprovantes</strong><span>Manter atividades pendentes até uma ação do administrador.</span></div><button class="button button-quiet" data-admin-action="toggle-setting">Ativo</button></div><div class="admin-list-row"><div class="admin-list-copy"><strong>Notificar novas inscrições</strong><span>Exibir alerta visual no painel a cada novo cadastro.</span></div><button class="button button-quiet" data-admin-action="toggle-setting">Ativo</button></div><div class="admin-list-row"><div class="admin-list-copy"><strong>Ranking público</strong><span>Permitir que participantes visualizem a classificação geral.</span></div><button class="button button-quiet" data-admin-action="toggle-setting">Ativo</button></div></div></div><div class="side-stack">${adminSurface("Ambiente atual", "Segurança da demonstração.", `<div class="quick-card"><h3>Mock local</h3><p>Sem login, API, persistência, cobrança ou integração externa.</p><button class="button button-secondary" data-admin-action="reset">Restaurar dados iniciais</button></div>`)}</div></div></div>`; }
+        function showAdminModal(content) { document.getElementById("admin-modal").innerHTML = `<div class="admin-modal-overlay"><section class="admin-modal">${content}</section></div>`; }
+        function closeAdminModal() { document.getElementById("admin-modal").innerHTML = ""; }
+        function adminNewRaceModal() { showAdminModal(`<div class="modal-head"><div><h2>Nova corrida</h2><p>Preencha os dados para simular a publicação de um novo evento.</p></div><button class="close-button" data-admin-action="close-modal">×</button></div><form id="admin-race-form"><div class="form-grid"><label class="form-field full"><span class="form-label">Nome da corrida</span><input class="form-control" name="name" required minlength="3" placeholder="Ex.: Circuito Verão RunningTracks"></label><label class="form-field"><span class="form-label">Distância</span><select class="form-control" name="distance"><option>5 km</option><option selected>10 km</option><option>21 km</option><option>42 km</option></select></label><label class="form-field"><span class="form-label">Data</span><input class="form-control" name="date" type="date" required value="2026-12-20"></label><label class="form-field full"><span class="form-label">Local</span><input class="form-control" name="city" required placeholder="Parque, cidade e estado"></label><label class="form-field"><span class="form-label">Capacidade</span><input class="form-control" name="capacity" type="number" min="1" required value="500"></label><label class="form-field"><span class="form-label">Status inicial</span><select class="form-control" name="status"><option value="open">Aberta</option><option value="scheduled">Programada</option></select></label><label class="form-field full"><span class="form-label">Descrição</span><textarea class="form-control" name="description" placeholder="Texto de apresentação (não será publicado)"></textarea><span class="form-hint">O cadastro ficará somente na memória desta aba.</span></label></div><div class="modal-footer"><button class="button button-secondary" type="button" data-admin-action="close-modal">Cancelar</button><button class="button button-primary" type="submit">Simular criação</button></div></form>`); document.getElementById("admin-race-form").addEventListener("submit", event => { event.preventDefault(); const form = new FormData(event.currentTarget); const date = String(form.get("date")); const parts = date.split("-"); state.admin.races.unshift({ id: Math.floor(Math.random() * 800) + 300, name: String(form.get("name")), distance: String(form.get("distance")), date: parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : date, city: String(form.get("city")), status: String(form.get("status")), enrolled: 0, capacity: Number(form.get("capacity")), color: "blue" }); closeAdminModal(); state.admin.view = "races"; render(); showToast("Corrida criada no protótipo", "O evento foi adicionado apenas à memória desta aba."); }); }
+        function adminReceiptModal(id) { const receipt = state.admin.receipts.find(item => item.id === Number(id)); if (!receipt) return; showAdminModal(`<div class="modal-head"><div><h2>Comprovante #${receipt.id}</h2><p>Revisão simulada de atividade enviada por ${esc(receipt.runner)}.</p></div><button class="close-button" data-admin-action="close-modal">×</button></div><div class="quick-card"><h3>${esc(receipt.race)}</h3><p>Tipo de evidência: <strong>${esc(receipt.type)}</strong><br>Enviado: ${esc(receipt.sent)}</p><div style="height:110px;display:grid;place-items:center;color:#7c8aa0;background:#e9eef7;border:1px dashed #bac7dc;border-radius:12px;font-size:11px">Área de arquivo mockado — nenhum upload real</div></div><div class="modal-footer"><button class="button button-secondary" data-admin-action="close-modal">Fechar</button><button class="button button-danger" data-admin-action="set-receipt" data-id="${receipt.id}" data-status="rejected">Recusar</button><button class="button button-primary" data-admin-action="set-receipt" data-id="${receipt.id}" data-status="approved">Aprovar</button></div>`); }
+        function adminRaceModal(id) { const race = state.admin.races.find(item => item.id === Number(id)); if (!race) return; showAdminModal(`<div class="modal-head"><div><h2>${esc(race.name)}</h2><p>${esc(race.date)} · ${esc(race.distance)} · ${esc(race.city)}</p></div><button class="close-button" data-admin-action="close-modal">×</button></div><div class="info-list"><div class="info-item"><span>◈</span><div><strong>Status</strong><p>${adminStatus(race.status)} — alteração simulada disponível nesta demo.</p></div></div><div class="info-item"><span>♙</span><div><strong>Ocupação</strong><p>${race.enrolled} participantes de ${race.capacity} vagas.</p></div></div><div class="info-item"><span>⌁</span><div><strong>Integrações</strong><p>Inscrições, pagamentos e notificações reais estão desativados.</p></div></div></div><div class="modal-footer"><button class="button button-primary" data-admin-action="close-modal">Entendi</button></div>`); }
+
+        document.addEventListener("click", event => {
+            const mode = event.target.closest("[data-mode]");
+            if (mode) { state.mode = mode.dataset.mode; render(); return; }
+            const device = event.target.closest("[data-device]");
+            if (device) { state.device = device.dataset.device; renderDevicePicker(); applyDevice(); return; }
+            const mobileScreen = event.target.closest("[data-mobile-screen]");
+            if (mobileScreen) { state.mobile.screen = mobileScreen.dataset.mobileScreen; if (state.mode === "mobile") renderMobileScreen(); return; }
+            const adminView = event.target.closest("[data-admin-view]");
+            if (adminView) { state.admin.view = adminView.dataset.adminView; if (state.mode === "admin") { render(); } return; }
+            const mobileFilter = event.target.closest("[data-mobile-filter]");
+            if (mobileFilter) { state.mobile.filter = mobileFilter.dataset.mobileFilter; renderMobileScreen(); return; }
+            const mobileModal = event.target.closest(".mobile-modal-overlay");
+            if (mobileModal && event.target === mobileModal) { closeMobileModal(); return; }
+            const adminOverlay = event.target.closest(".admin-modal-overlay");
+            if (adminOverlay && event.target === adminOverlay) { closeAdminModal(); return; }
+            const mobileAction = event.target.closest("[data-mobile-action]");
+            if (mobileAction) {
+                const action = mobileAction.dataset.mobileAction;
+                if (action === "notify") { notificationModal(); return; }
+                if (action === "close-modal") { closeMobileModal(); return; }
+                if (action === "details") { state.mobile.selectedRace = Number(mobileAction.dataset.id); state.mobile.screen = "details"; renderMobileScreen(); return; }
+                if (action === "join") { state.mobile.joined = true; state.mobile.screen = "my-races"; renderMobileScreen(); mobileToast("Inscrição simulada confirmada. Nenhuma cobrança foi realizada."); return; }
+                if (action === "receipt") { state.mobile.receiptSent ? mobileToast("Este comprovante já está enviado na demo.") : receiptModal(); return; }
+                if (action === "send-receipt") { state.mobile.receiptSent = true; closeMobileModal(); renderMobileScreen(); mobileToast("Comprovante enviado em modo demonstração."); return; }
+                if (action === "read-notification") { const notification = state.mobile.notifications.find(item => item.id === Number(mobileAction.dataset.id)); if (notification) { notification.read = true; renderMobileScreen(); notificationModal(); } return; }
+                if (action === "mark-notifications") { state.mobile.notifications.forEach(item => item.read = true); renderMobileScreen(); notificationModal(); return; }
+            }
+            const adminAction = event.target.closest("[data-admin-action]");
+            if (adminAction) {
+                const action = adminAction.dataset.adminAction;
+                if (action === "new-race") { adminNewRaceModal(); return; }
+                if (action === "close-modal") { closeAdminModal(); return; }
+                if (action === "reset") { state = JSON.parse(JSON.stringify(seed)); render(); showToast("Demo restaurada", "Os dados voltaram ao estado inicial."); return; }
+                if (action === "notifications") { showToast("Notificações mockadas", "Você tem 4 eventos simulados para revisar."); return; }
+                if (action === "export") { showToast("Exportação simulada", "Nenhum arquivo foi criado ou baixado."); return; }
+                if (action === "save-settings") { showToast("Preferências salvas na demo", "As alterações ficam somente na memória desta aba."); return; }
+                if (action === "toggle-setting") { adminAction.textContent = adminAction.textContent.trim() === "Ativo" ? "Inativo" : "Ativo"; showToast("Preferência alterada", "O estado foi alterado visualmente."); return; }
+                if (action === "verify-user") { const user = state.admin.users.find(item => item.id === Number(adminAction.dataset.id)); if (user) { user.verified = !user.verified; renderAdminContent(); showToast(user.verified ? "Cadastro verificado" : "Verificação removida", `${user.name} foi atualizado somente no protótipo.`); } return; }
+                if (action === "race-detail") { adminRaceModal(adminAction.dataset.id); return; }
+                if (action === "receipt-view") { adminReceiptModal(adminAction.dataset.id); return; }
+                if (action === "set-receipt") { const receipt = state.admin.receipts.find(item => item.id === Number(adminAction.dataset.id)); if (receipt) { receipt.status = adminAction.dataset.status; closeAdminModal(); renderAdminContent(); showToast(`Comprovante ${adminStatus(receipt.status).toLowerCase()}`, "O resultado foi alterado somente no estado local."); } return; }
+            }
+        });
+        document.addEventListener("input", event => {
+            const field = event.target.closest("[data-admin-filter]");
+            if (!field) return;
+            const name = field.dataset.adminFilter;
+            state.admin[name] = field.value;
+            if (name === "raceSearch" || name === "userSearch") { const caret = field.selectionStart; renderAdminContent(); const refreshed = document.querySelector(`[data-admin-filter="${name}"]`); if (refreshed) { refreshed.focus(); refreshed.setSelectionRange(caret, caret); } }
+        });
+        document.addEventListener("change", event => { const field = event.target.closest("[data-admin-filter]"); if (!field) return; state.admin[field.dataset.adminFilter] = field.value; renderAdminContent(); });
+        render();
+    </script>
+</body>
+</html>
